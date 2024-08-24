@@ -6,6 +6,7 @@ interface IConfig {
     autoJoin: boolean;
     dataPath: string;
     encryption: boolean;
+    rssPollInterval: number;
 }
 
 export default <IConfig>config;

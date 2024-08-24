@@ -40,7 +40,7 @@ LogService.info("index", "Bot starting...");
     // Now create the client
     const client = new MatrixClient(config.homeserverUrl, config.accessToken, storage, cryptoStore);
 
-    schedule.scheduleJob('*/100 * * * *', () => runSendFeedTask(client));
+    schedule.scheduleJob(`*/${config.rssPollInterval} * * * *`, () => runSendFeedTask(client));
 
     // Setup the autojoin mixin (if enabled)
     if (config.autoJoin) {

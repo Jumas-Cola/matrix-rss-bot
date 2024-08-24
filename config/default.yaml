@@ -15,3 +15,6 @@ dataPath: "storage"
 # Set to false to disable encryption support. Encrypted data will be
 # stored under dataPath.
 encryption: true
+
+# How often to poll RSS feeds for new content in minutes.
+rssPollInterval: 100

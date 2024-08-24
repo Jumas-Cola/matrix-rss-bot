@@ -67,17 +67,19 @@ async function sendNews(roomId: string, client: MatrixClient, newsItem: any) {
   let title = newsItem.title;
   let link = newsItem.link;
   let content = newsItem.content;
-  let pubDate = new Date(Date.parse(newsItem.pubDate));
 
-  let html = `<h4>${htmlEscape(title)}</h4>`;
+  let text = `${title.replace(/<[^>]*>?/gm, '')}\n`;
+  let html = `<h4>${title}</h4>`;
   if (content) {
+    text += `${content.replace(/<[^>]*>?/gm, '')}\n`;
     html += `<p>${content}</p>`;
   }
 
-  html += `<a href="${link}">${link}</a>
-    <p>${pubDate.toLocaleDateString('ru-RU')}</p>`;
+  text += `${link}\n`;
+  html += `<a href="${link}">${link}</a>`;
 
   await client.sendMessage(roomId, {
+    body: text,
     msgtype: 'm.notice',
     format: 'org.matrix.custom.html',
     formatted_body: html,

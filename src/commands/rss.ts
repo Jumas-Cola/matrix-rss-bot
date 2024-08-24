@@ -43,10 +43,12 @@ export async function runAddRssCommand(
   });
   storage.storeValue(`rss-${roomId}`, JSON.stringify(currentRss));
 
+  let text = `Url ${htmlEscape(url)} added to RSS list.`;
   let html = `Url <b>${htmlEscape(url)}</b> added to RSS list.`;
 
   // Now send that message as a notice
   return client.sendMessage(roomId, {
+    body: text,
     msgtype: 'm.notice',
     format: 'org.matrix.custom.html',
     formatted_body: html,
@@ -66,16 +68,22 @@ export async function runListRssCommand(
     currentRss = JSON.parse(currentRssStr);
   }
 
+  let text = '';
   let html = '';
   for (const rss of currentRss) {
+    text += `• ${rss.title} - ${rss.url}\n`;
     html += `<li><a href="${rss.url}">${rss.title}</a></li>`;
   }
-  if (html === '') {
+  if (text === '') {
+    text = 'No RSS feeds added.';
     html = 'No RSS feeds added.';
+  } else {
+    html = `<ul>${html}</ul>`;
   }
 
   // Now send that message as a notice
   return client.sendMessage(roomId, {
+    body: text,
     msgtype: 'm.notice',
     format: 'org.matrix.custom.html',
     formatted_body: html,
@@ -98,10 +106,12 @@ export async function runRemoveRssCommand(
   currentRss = currentRss.filter(item => item.url !== url);
   storage.storeValue(`rss-${roomId}`, JSON.stringify(currentRss));
 
+  let text = `Url removed from RSS list.`;
   let html = `Url removed from RSS list.`;
 
   // Now send that message as a notice
   return client.sendMessage(roomId, {
+    body: text,
     msgtype: 'm.notice',
     format: 'org.matrix.custom.html',
     formatted_body: html,

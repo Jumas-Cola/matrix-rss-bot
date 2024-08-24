@@ -1,21 +1,21 @@
 {
-  "name": "matrix-bot-sdk-bot-template",
+  "name": "matrix-rss-bot",
   "version": "0.1.0",
-  "author": "TravisR",
-  "license": "Apache-2.0",
-  "description": "A template repository for bots made with the matrix-bot-sdk",
+  "author": "Jumas-Cola",
+  "license": "MIT",
+  "description": "A bot that posts RSS feeds to a room",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/turt2live/matrix-bot-sdk-bot-template.git"
+    "url": "git+https://github.com/Jumas-Cola/matrix-rss-bot.git"
   },
   "bugs": {
-    "url": "https://github.com/turt2live/matrix-bot-sdk-bot-template/issues"
+    "url": "https://github.com/Jumas-Cola/matrix-rss-bot/issues"
   },
-  "homepage": "https://github.com/turt2live/matrix-bot-sdk-bot-template#readme",
+  "homepage": "https://github.com/Jumas-Cola/matrix-rss-bot#readme",
   "keywords": [
     "matrix",
     "bot",
-    "template"
+    "rss"
   ],
   "main": "lib/index.js",
   "scripts": {
@@ -24,10 +24,13 @@
     "start:dev": "npm run build && node lib/index.js"
   },
   "dependencies": {
+    "@types/node-schedule": "^2.1.7",
     "config": "^3.3.6",
     "escape-html": "^1.0.3",
     "js-yaml": "^4.1.0",
-    "matrix-bot-sdk": "^0.6.0-beta.4"
+    "matrix-bot-sdk": "^0.6.0-beta.4",
+    "node-schedule": "^2.1.1",
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "@types/node": "^14.18.5",

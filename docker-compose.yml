@@ -1,0 +1,13 @@
+services:
+  rss-bot:
+    build: .
+    volumes:
+      - ./config:/bot/config
+      - ./storage:/bot/storage
+    restart: always
+    networks:
+      - matrix-bot-network
+
+networks:
+  matrix-bot-network:
+    driver: bridge

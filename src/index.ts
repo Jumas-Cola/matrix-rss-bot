@@ -8,8 +8,10 @@ import {
     SimpleFsStorageProvider
 } from "matrix-bot-sdk";
 import * as path from "path";
+import * as schedule from 'node-schedule';
 import config from "./config";
 import CommandHandler from "./commands/handler";
+import { runSendFeedTask } from "./scheduler/rss";
 
 // First things first: let's make the logs a bit prettier.
 LogService.setLogger(new RichConsoleLogger());
@@ -37,6 +39,8 @@ LogService.info("index", "Bot starting...");
 
     // Now create the client
     const client = new MatrixClient(config.homeserverUrl, config.accessToken, storage, cryptoStore);
+
+    schedule.scheduleJob('*/5 * * * *', () => runSendFeedTask(client));
 
     // Setup the autojoin mixin (if enabled)
     if (config.autoJoin) {

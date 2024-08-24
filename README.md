@@ -1,6 +1,13 @@
-# `matrix-bot-sdk` Bot Templates
+# `matrix-rss-bot` Bot that fetches RSS feeds and posts them to a room
 
-A template for creating bots with [matrix-bot-sdk](https://www.npmjs.com/package/matrix-bot-sdk).
+Bot created with [matrix-bot-sdk](https://www.npmjs.com/package/matrix-bot-sdk).
+
+```
+!bot help             - This menu
+!bot add-rss [url]    - Add rss to feed.
+!bot rm-rss [url]     - Remove rss from feed.
+!bot list-rss         - List all rss feeds.
+```
 
 ## Projects using this template
 

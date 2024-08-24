@@ -71,7 +71,7 @@ async function sendNews(roomId: string, client: MatrixClient, newsItem: any) {
 
   let html = `<h4>${htmlEscape(title)}</h4>`;
   if (content) {
-    html += `<p>${htmlEscape(content)}</p>`;
+    html += `<p>${content}</p>`;
   }
 
   html += `<a href="${link}">${link}</a>

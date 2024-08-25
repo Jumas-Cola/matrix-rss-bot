@@ -20,7 +20,7 @@ encryption: true
 rssPollInterval: 100
 
 # MongoDB URI for the bot to use.
-dbUri: "mongodb://localhost:27017"
+dbUri: "mongodb://mongo:27017"
 
 # The name of the database to use.
 dbName: "rss-bot"

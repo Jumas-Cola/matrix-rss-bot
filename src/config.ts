@@ -7,6 +7,9 @@ interface IConfig {
     dataPath: string;
     encryption: boolean;
     rssPollInterval: number;
+    dbUri: string;
+    dbName: string;
+    dbCollection: string;
 }
 
 export default <IConfig>config;

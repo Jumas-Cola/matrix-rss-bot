@@ -4,22 +4,19 @@ import * as Parser from 'rss-parser';
 import * as path from 'path';
 import config from '../config';
 import * as fs from 'fs';
+import { Collection, MongoClient } from 'mongodb';
+import getCollection from '../db';
 
-export async function runSendFeedTask(client: MatrixClient) {
-  const storageFilePath = path.join(config.dataPath, 'bot.json');
-  const data = fs.readFileSync(storageFilePath, 'utf-8');
-  const storageData = JSON.parse(data); // Возвращаем объект с данными
-  const filteredStorage = Object.entries(storageData.kvStore).filter(item => {
-    const [k, v] = item;
-    return k.startsWith('rss-');
-  });
+export async function runSendFeedTask(
+  client: MatrixClient,
+  dbClient: MongoClient,
+) {
+  const collection = await getCollection(dbClient);
+  let rssRooms = await collection.find({}).toArray();
+
   let parser = new Parser();
-  for (let item of filteredStorage) {
-    const [key, value] = item;
-    const roomId = key.replace(/^rss-/i, '');
-    let feeds = JSON.parse(`${value}`);
-
-    for (let feed of feeds) {
+  for (let item of rssRooms) {
+    for (let feed of item.rssSubs) {
       const feedUrl = feed.url;
       LogService.info('index', `Fetching feed ${feedUrl}`);
       let news = await getFeedNews(feedUrl, parser);
@@ -30,13 +27,13 @@ export async function runSendFeedTask(client: MatrixClient) {
       for (let newsItem of news) {
         const newsDate = new Date(Date.parse(newsItem.isoDate));
         if (lastCheck === null || newsDate > lastCheck) {
-          await sendNews(roomId, client, newsItem);
+          await sendNews(item.roomId, client, newsItem);
         }
       }
 
       lastCheck = new Date();
 
-      await setLastCheckDate(roomId, client, lastCheck);
+      await setLastCheckDate(item.roomId, collection, lastCheck);
     }
   }
 }
@@ -48,19 +45,20 @@ async function getFeedNews(feedUrl: string, parser: Parser): Promise<any[]> {
 
 async function setLastCheckDate(
   roomId: string,
-  client: MatrixClient,
+  collection: Collection,
   lastCheck: Date,
 ) {
-  let storage = client.storageProvider;
-  let currentRssStr = await storage.readValue(`rss-${roomId}`);
+  let rssDoc = await collection.findOne({ roomId: roomId });
   let currentRss = [];
-  if (currentRssStr) {
-    currentRss = JSON.parse(currentRssStr);
+  if (rssDoc) {
+    currentRss = rssDoc.rssSubs;
+  } else {
+    return;
   }
   currentRss = currentRss.map(item => {
     return { ...item, lastCheck: lastCheck };
   });
-  storage.storeValue(`rss-${roomId}`, JSON.stringify(currentRss));
+  await collection.updateOne({ roomId }, { $set: { rssSubs: currentRss } });
 }
 
 async function sendNews(roomId: string, client: MatrixClient, newsItem: any) {

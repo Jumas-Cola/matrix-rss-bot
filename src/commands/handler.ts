@@ -11,6 +11,7 @@ import {
   runRemoveRssCommand,
 } from './rss';
 import * as htmlEscape from 'escape-html';
+import { MongoClient } from 'mongodb';
 
 // The prefix required to trigger the bot. The bot will also respond
 // to being pinged directly.
@@ -24,7 +25,10 @@ export default class CommandHandler {
   private userId: string;
   private localpart: string;
 
-  constructor(private client: MatrixClient) {}
+  constructor(
+    private client: MatrixClient,
+    private dbClient: MongoClient,
+  ) {}
 
   public async start() {
     // Populate the variables above (async)
@@ -71,11 +75,29 @@ export default class CommandHandler {
     // Try and figure out what command the user ran, defaulting to help
     try {
       if (args[0] === 'add-rss') {
-        return runAddRssCommand(roomId, event, args, this.client);
+        return runAddRssCommand(
+          roomId,
+          event,
+          args,
+          this.client,
+          this.dbClient,
+        );
       } else if (args[0] === 'rm-rss') {
-        return runRemoveRssCommand(roomId, event, args, this.client);
+        return runRemoveRssCommand(
+          roomId,
+          event,
+          args,
+          this.client,
+          this.dbClient,
+        );
       } else if (args[0] === 'list-rss') {
-        return runListRssCommand(roomId, event, args, this.client);
+        return runListRssCommand(
+          roomId,
+          event,
+          args,
+          this.client,
+          this.dbClient,
+        );
       } else {
         const help =
           '' +

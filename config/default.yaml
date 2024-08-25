@@ -18,3 +18,12 @@ encryption: true
 
 # How often to poll RSS feeds for new content in minutes.
 rssPollInterval: 100
+
+# MongoDB URI for the bot to use.
+dbUri: "mongodb://localhost:27017"
+
+# The name of the database to use.
+dbName: "rss-bot"
+
+# The name of the collection to use.
+dbCollection: "rss"

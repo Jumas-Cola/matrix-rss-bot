@@ -6,45 +6,63 @@ import {
 } from 'matrix-bot-sdk';
 import * as htmlEscape from 'escape-html';
 import * as Parser from 'rss-parser';
+import { MongoClient } from 'mongodb';
+import getCollection from '../db';
 
 export async function runAddRssCommand(
   roomId: string,
   event: MessageEvent<MessageEventContent>,
   args: string[],
   client: MatrixClient,
+  dbClient: MongoClient,
 ) {
   let url = args[1].trim();
-  let parser = new Parser();
-  let feedTitle = '';
-  try {
-    let feed = await parser.parseURL(url);
-    console.log(feed);
-    feedTitle = feed.title;
-  } catch (error) {
-    LogService.error('commands/rss', error);
-    let html = `Invalid url <b>${htmlEscape(url)}</b>.`;
-    return client.sendMessage(roomId, {
-      msgtype: 'm.notice',
-      format: 'org.matrix.custom.html',
-      formatted_body: html,
-    });
-  }
 
-  let storage = client.storageProvider;
-  let currentRssStr = await storage.readValue(`rss-${roomId}`);
+  const collection = await getCollection(dbClient);
+  let rssDoc = await collection.findOne({ roomId: roomId });
   let currentRss = [];
-  if (currentRssStr) {
-    currentRss = JSON.parse(currentRssStr);
+  if (rssDoc) {
+    currentRss = rssDoc.rssSubs;
   }
-  currentRss = currentRss.filter(item => item.url !== url);
-  currentRss.push({
-    url: url,
-    title: feedTitle,
-  });
-  storage.storeValue(`rss-${roomId}`, JSON.stringify(currentRss));
 
-  let text = `Url ${htmlEscape(url)} added to RSS list.`;
-  let html = `Url <b>${htmlEscape(url)}</b> added to RSS list.`;
+  let foundRss = currentRss.find(item => item.url === url);
+  let text = '';
+  let html = '';
+  if (foundRss) {
+    text = `Url ${htmlEscape(url)} already added to RSS list.`;
+    html = `Url <b>${htmlEscape(url)}</b> already added to RSS list.`;
+  } else {
+    let parser = new Parser();
+    let feedTitle = '';
+    try {
+      let feed = await parser.parseURL(url);
+      feedTitle = feed.title;
+    } catch (error) {
+      LogService.error('commands/rss', error);
+      let text = `Invalid url ${htmlEscape(url)}.`;
+      let html = `Invalid url <b>${htmlEscape(url)}</b>.`;
+
+      return client.sendMessage(roomId, {
+        body: text,
+        msgtype: 'm.notice',
+        format: 'org.matrix.custom.html',
+        formatted_body: html,
+      });
+    }
+
+    currentRss.push({
+      url: url,
+      title: feedTitle,
+    });
+    await collection.updateOne(
+      { roomId: roomId },
+      { $set: { rssSubs: currentRss } },
+      { upsert: true },
+    );
+
+    text = `Url ${htmlEscape(url)} added to RSS list.`;
+    html = `Url <b>${htmlEscape(url)}</b> added to RSS list.`;
+  }
 
   // Now send that message as a notice
   return client.sendMessage(roomId, {
@@ -60,12 +78,13 @@ export async function runListRssCommand(
   event: MessageEvent<MessageEventContent>,
   args: string[],
   client: MatrixClient,
+  dbClient: MongoClient,
 ) {
-  let storage = client.storageProvider;
-  let currentRssStr = await storage.readValue(`rss-${roomId}`);
+  const collection = await getCollection(dbClient);
+  let rssDoc = await collection.findOne({ roomId: roomId });
   let currentRss = [];
-  if (currentRssStr) {
-    currentRss = JSON.parse(currentRssStr);
+  if (rssDoc) {
+    currentRss = rssDoc.rssSubs;
   }
 
   let text = '';
@@ -95,19 +114,33 @@ export async function runRemoveRssCommand(
   event: MessageEvent<MessageEventContent>,
   args: string[],
   client: MatrixClient,
+  dbClient: MongoClient,
 ) {
   let url = args[1].trim();
-  let storage = client.storageProvider;
-  let currentRssStr = await storage.readValue(`rss-${roomId}`);
+  const collection = await getCollection(dbClient);
+  let rssDoc = await collection.findOne({ roomId: roomId });
   let currentRss = [];
-  if (currentRssStr) {
-    currentRss = JSON.parse(currentRssStr);
-  }
-  currentRss = currentRss.filter(item => item.url !== url);
-  storage.storeValue(`rss-${roomId}`, JSON.stringify(currentRss));
 
-  let text = `Url removed from RSS list.`;
-  let html = `Url removed from RSS list.`;
+  let text = `No RSS feeds added.`;
+  let html = `No RSS feeds added.`;
+
+  if (rssDoc) {
+    currentRss = rssDoc.rssSubs;
+    let foundRss = currentRss.find(item => item.url === url);
+    if (!foundRss) {
+      text = `Url ${htmlEscape(url)} not found in RSS list.`;
+      html = `Url <b>${htmlEscape(url)}</b> not found in RSS list.`;
+    } else {
+      currentRss = currentRss.filter(item => item.url !== url);
+      await collection.updateOne(
+        { roomId: roomId },
+        { $set: { rssSubs: currentRss } },
+      );
+
+      text = `Url removed from RSS list.`;
+      html = `Url removed from RSS list.`;
+    }
+  }
 
   // Now send that message as a notice
   return client.sendMessage(roomId, {

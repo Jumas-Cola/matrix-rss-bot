@@ -7,6 +7,21 @@ services:
     restart: always
     networks:
       - matrix-bot-network
+  mongo:
+    image: mongo
+    environment:
+      MONGO_INITDB_DATABASE: rss-bot
+    volumes:
+      - mongo_data:/data/db
+      - ./docker/mongo/docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    restart: always
+    # ports:
+    #   - 27017:27017
+    networks:
+      - matrix-bot-network
+
+volumes:
+  mongo_data:
 
 networks:
   matrix-bot-network:

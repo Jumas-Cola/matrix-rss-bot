@@ -9,6 +9,14 @@ Bot created with [matrix-bot-sdk](https://www.npmjs.com/package/matrix-bot-sdk).
 !bot list-rss         - List all rss feeds.
 ```
 
+## Most important news list with Grok AI
+
+For this feature add in config:
+
+```yaml
+groqApiKey: "YOUR_API_KEY_HERE"
+```
+
 ## Projects using this template
 
 - [matrix-zammad](https://github.com/Half-Shot/matrix-zammad) by [Half-Shot](https://github.com/Half-Shot)

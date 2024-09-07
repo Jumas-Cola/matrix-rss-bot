@@ -1,11 +1,14 @@
 import { LogService, MatrixClient } from 'matrix-bot-sdk';
-import * as htmlEscape from 'escape-html';
 import * as Parser from 'rss-parser';
-import * as path from 'path';
 import config from '../config';
-import * as fs from 'fs';
 import { Collection, MongoClient } from 'mongodb';
 import getCollection from '../db';
+import Groq from 'groq-sdk';
+
+let groq = null;
+if (config.groqApiKey.length > 0) {
+  groq = new Groq({ apiKey: config.groqApiKey });
+}
 
 export async function runSendFeedTask(
   client: MatrixClient,
@@ -16,9 +19,10 @@ export async function runSendFeedTask(
 
   let parser = new Parser();
   for (let item of rssRooms) {
+    let allTitlesForSummary = '';
     for (let feed of item.rssSubs) {
       const feedUrl = feed.url;
-      LogService.info('index', `Fetching feed ${feedUrl}`);
+      LogService.info('scheduler/rss', `Fetching feed ${feedUrl}`);
       let news = await getFeedNews(feedUrl, parser);
       let lastCheck = feed?.lastCheck
         ? new Date(Date.parse(feed.lastCheck))
@@ -27,6 +31,7 @@ export async function runSendFeedTask(
       for (let newsItem of news) {
         const newsDate = new Date(Date.parse(newsItem.isoDate));
         if (lastCheck === null || newsDate > lastCheck) {
+          allTitlesForSummary += `${newsItem.title.replace(/<[^>]*>?/gm, '')}\n`;
           await sendNews(item.roomId, client, newsItem);
         }
       }
@@ -35,6 +40,23 @@ export async function runSendFeedTask(
 
       await setLastCheckDate(item.roomId, collection, lastCheck);
     }
+
+    try {
+      if (groq === null || allTitlesForSummary.length === 0) {
+        continue;
+      }
+      const chatCompletion = await makeSummary(allTitlesForSummary);
+      const summary = chatCompletion.choices[0]?.message?.content || "";
+
+      if (summary) {
+        await client.sendMessage(item.roomId, {
+          body: summary,
+          msgtype: 'm.notice',
+          format: 'org.matrix.custom.html',
+          formatted_body: summary,
+        });
+      }
+    } catch (error) {}
   }
 }
 
@@ -81,5 +103,18 @@ async function sendNews(roomId: string, client: MatrixClient, newsItem: any) {
     msgtype: 'm.notice',
     format: 'org.matrix.custom.html',
     formatted_body: html,
+  });
+}
+
+async function makeSummary(allNewsForSummary: string) {
+  LogService.info('scheduler/rss', `Starting summary`);
+  return groq.chat.completions.create({
+    messages: [
+      {
+        role: 'user',
+        content: `Выдели самые важные темы, ответь на том же языке, на каком заголовки:\n${allNewsForSummary}`,
+      },
+    ],
+    model: 'llama3-8b-8192',
   });
 }

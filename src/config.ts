@@ -10,6 +10,7 @@ interface IConfig {
     dbUri: string;
     dbName: string;
     dbCollection: string;
+    groqApiKey: string;
 }
 
 export default <IConfig>config;

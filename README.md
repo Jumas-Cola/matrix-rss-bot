@@ -9,7 +9,7 @@ Bot created with [matrix-bot-sdk](https://www.npmjs.com/package/matrix-bot-sdk).
 !bot list-rss         - List all rss feeds.
 ```
 
-## Most important news list with Grok AI
+## Most important news list with Groq AI
 
 For this feature add in config:
 

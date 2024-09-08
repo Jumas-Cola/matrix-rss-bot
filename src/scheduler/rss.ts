@@ -46,9 +46,11 @@ export async function runSendFeedTask(
         continue;
       }
       const chatCompletion = await makeSummary(allTitlesForSummary);
-      const summary = chatCompletion.choices[0]?.message?.content || "";
+      let summary = chatCompletion.choices[0]?.message?.content || "";
 
       if (summary) {
+        summary = summary.replace(/([\*-+])\s/g, '\n$1 ');
+        summary = summary.replace(/\s\*\*/g, '\n\n **');
         await client.sendMessage(item.roomId, {
           body: summary,
           msgtype: 'm.notice',

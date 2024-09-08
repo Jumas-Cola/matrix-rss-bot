@@ -46,7 +46,7 @@ export async function runSendFeedTask(
         continue;
       }
       const chatCompletion = await makeSummary(allTitlesForSummary);
-      let summary = chatCompletion.choices[0]?.message?.content || "";
+      let summary = chatCompletion.choices[0]?.message?.content || '';
 
       if (summary) {
         await client.sendMessage(item.roomId, {
@@ -111,8 +111,17 @@ async function makeSummary(allNewsForSummary: string) {
   return groq.chat.completions.create({
     messages: [
       {
+        role: 'system',
+        content: `Ответ должен быть в таком формате:
+Тема
+- Заголовок 1
+- Заголовок 2
+...
+Выдели самые важные темы, ответь на том же языке, на каком текст ниже.`,
+      },
+      {
         role: 'user',
-        content: `Выдели самые важные темы, ответь на том же языке, на каком заголовки:\n${allNewsForSummary}`,
+        content: allNewsForSummary,
       },
     ],
     model: 'llama3-8b-8192',

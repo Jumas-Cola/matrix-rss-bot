@@ -124,6 +124,6 @@ async function makeSummary(allNewsForSummary: string) {
         content: allNewsForSummary,
       },
     ],
-    model: 'llama3-70b-8192',
+    model: 'llama3-8b-8192',
   });
 }

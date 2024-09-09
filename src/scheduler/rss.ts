@@ -49,6 +49,7 @@ export async function runSendFeedTask(
       let summary = chatCompletion.choices[0]?.message?.content || '';
 
       if (summary) {
+        summary = `#topnews\n\n${summary}`;
         await client.sendMessage(item.roomId, {
           body: summary,
           msgtype: 'm.notice',

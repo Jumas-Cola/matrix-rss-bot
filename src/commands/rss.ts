@@ -36,7 +36,8 @@ export async function runAddRssCommand(
     let feedTitle = '';
     try {
       let feed = await parser.parseURL(url);
-      feedTitle = feed.title;
+      let parsedUrl = new URL(url);
+      feedTitle = feed.title || parsedUrl.hostname;
     } catch (error) {
       LogService.error('commands/rss', error);
       let text = `Invalid url ${htmlEscape(url)}.`;

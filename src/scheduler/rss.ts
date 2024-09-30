@@ -3,11 +3,11 @@ import * as Parser from 'rss-parser';
 import config from '../config';
 import { Collection, MongoClient } from 'mongodb';
 import getCollection from '../db';
-import Groq from 'groq-sdk';
+import OpenAiService from '../services/openAiService';
 
-let groq = null;
-if (config.groqApiKey.length > 0) {
-  groq = new Groq({ apiKey: config.groqApiKey });
+let openAiService = null;
+if (config.openAiApiUrl.length > 0 && config.openAiApiKey.length > 0) {
+  openAiService = new OpenAiService(config.openAiApiUrl, config.openAiApiKey);
 }
 
 export async function runSendFeedTask(
@@ -23,29 +23,35 @@ export async function runSendFeedTask(
     for (let feed of item.rssSubs) {
       const feedUrl = feed.url;
       LogService.info('scheduler/rss', `Fetching feed ${feedUrl}`);
-      let news = await getFeedNews(feedUrl, parser);
-      let lastCheck = feed?.lastCheck
-        ? new Date(Date.parse(feed.lastCheck))
-        : null;
 
-      for (let newsItem of news) {
-        const newsDate = new Date(Date.parse(newsItem.isoDate));
-        if (lastCheck === null || newsDate > lastCheck) {
-          allTitlesForSummary += `${newsItem.title.replace(/<[^>]*>?/gm, '')}\n`;
-          await sendNews(item.roomId, client, newsItem);
+      try {
+        let news = await getFeedNews(feedUrl, parser);
+        let lastCheck = feed?.lastCheck
+          ? new Date(Date.parse(feed.lastCheck))
+          : null;
+
+        for (let newsItem of news) {
+          const newsDate = new Date(Date.parse(newsItem.isoDate));
+          if (lastCheck === null || newsDate > lastCheck) {
+            allTitlesForSummary += `${newsItem.title.replace(/<[^>]*>?/gm, '')}\n`;
+            await sendNews(item.roomId, client, newsItem);
+          }
         }
+
+        lastCheck = new Date();
+
+        await setLastCheckDate(item.roomId, collection, lastCheck);
+      } catch (error) {
+        LogService.error('scheduler/rss', `Error fetching feed ${feedUrl}`);
       }
-
-      lastCheck = new Date();
-
-      await setLastCheckDate(item.roomId, collection, lastCheck);
     }
 
     try {
-      if (groq === null || allTitlesForSummary.length === 0) {
+      if (openAiService === null || allTitlesForSummary.length === 0) {
         continue;
       }
-      const chatCompletion = await makeSummary(allTitlesForSummary);
+      const chatCompletion =
+        await openAiService.makeSummary(allTitlesForSummary);
       let summary = chatCompletion.choices[0]?.message?.content || '';
 
       if (summary) {
@@ -104,27 +110,5 @@ async function sendNews(roomId: string, client: MatrixClient, newsItem: any) {
     msgtype: 'm.notice',
     format: 'org.matrix.custom.html',
     formatted_body: html,
-  });
-}
-
-async function makeSummary(allNewsForSummary: string) {
-  LogService.info('scheduler/rss', `Starting summary`);
-  return groq.chat.completions.create({
-    messages: [
-      {
-        role: 'system',
-        content: `Ответ должен быть в таком формате:
-Тема
-- Заголовок 1
-- Заголовок 2
-...
-Выдели самые важные темы, ответь на том же языке, на каком текст ниже.`,
-      },
-      {
-        role: 'user',
-        content: allNewsForSummary,
-      },
-    ],
-    model: 'llama3-8b-8192',
   });
 }

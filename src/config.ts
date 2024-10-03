@@ -12,6 +12,7 @@ interface IConfig {
     dbCollection: string;
     openAiApiUrl: string;
     openAiApiKey: string;
+    openAiApiModel: string;
 }
 
 export default <IConfig>config;

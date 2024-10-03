@@ -6,8 +6,12 @@ import getCollection from '../db';
 import OpenAiService from '../services/openAiService';
 
 let openAiService = null;
-if (config.openAiApiUrl.length > 0 && config.openAiApiKey.length > 0) {
-  openAiService = new OpenAiService(config.openAiApiUrl, config.openAiApiKey);
+if (config.openAiApiUrl.length > 0) {
+  openAiService = new OpenAiService(
+    config.openAiApiUrl,
+    config.openAiApiKey,
+    config.openAiApiModel,
+  );
 }
 
 export async function runSendFeedTask(
@@ -50,6 +54,9 @@ export async function runSendFeedTask(
       if (openAiService === null || allTitlesForSummary.length === 0) {
         continue;
       }
+
+      LogService.info('scheduler/rss', `Starting summary`);
+
       const chatCompletion =
         await openAiService.makeSummary(allTitlesForSummary);
       let summary = chatCompletion.choices[0]?.message?.content || '';
@@ -63,7 +70,9 @@ export async function runSendFeedTask(
           formatted_body: summary,
         });
       }
-    } catch (error) {}
+    } catch (error) {
+      LogService.error('scheduler/rss', `Error making summary.\n${error}`);
+    }
   }
 }
 

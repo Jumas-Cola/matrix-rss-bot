@@ -14,7 +14,9 @@ Bot created with [matrix-bot-sdk](https://www.npmjs.com/package/matrix-bot-sdk).
 For this feature add in config:
 
 ```yaml
-groqApiKey: "YOUR_API_KEY_HERE"
+openAiApiUrl: "https://openaiapi.test/api/v1"
+openAiApiKey: "XXXXXXXXXXXXXXXXXXXX"
+openAiApiModel: "gpt-3.5-turbo"
 ```
 
 ## Projects using this template

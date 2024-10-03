@@ -3,17 +3,24 @@ import OpenAI from 'openai';
 
 class OpenAiService {
   private openAiClient: OpenAI;
+  private model = 'gpt-3.5-turbo';
 
-  constructor(openAiApiUrl: string, openAiApiKey: string) {
-    this.openAiClient = new OpenAI({
+  constructor(
+    openAiApiUrl: string,
+    openAiApiKey: string | null,
+    openAiApiModel?: string,
+  ) {
+    let config = {
       baseURL: openAiApiUrl,
-      apiKey: openAiApiKey,
-    });
+    };
+    if (openAiApiKey) {
+      config['apiKey'] = openAiApiKey;
+    }
+    this.openAiClient = new OpenAI(config);
+    this.model = openAiApiModel || this.model;
   }
 
   async makeSummary(allNewsForSummary: string) {
-    LogService.info('scheduler/rss', `Starting summary`);
-
     return this.openAiClient.chat.completions.create({
       messages: [
         {
@@ -35,7 +42,7 @@ class OpenAiService {
           content: allNewsForSummary,
         },
       ],
-      model: 'gpt-3.5-turbo',
+      model: this.model,
     });
   }
 }
